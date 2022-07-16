@@ -21,6 +21,4 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "zjhAddFuns")
 		void GameButtonClicked();
 
-private:
-	class AMgGameMode* gameMode;
 };

@@ -7,7 +7,6 @@
 
 void UMgGameBanner::GameButtonClicked()
 {
-	gameMode = Cast<AMgGameMode>(GetWorld()->GetAuthGameMode());
 	if (gameMode)
 	{
 		gameMode->SwitchGame(bannerName);

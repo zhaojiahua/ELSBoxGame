@@ -22,6 +22,8 @@ public:
 	
 	//公开的变量
 	EMultiGames currentGame;
+	class AMgPlayerController* playerController;
+	class AMgHUD* hud;
 
 protected:
 	EMultiGames GetGameFromOpenedLevel();

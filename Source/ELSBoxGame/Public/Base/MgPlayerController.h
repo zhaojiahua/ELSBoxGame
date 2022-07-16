@@ -8,5 +8,10 @@ UCLASS()
 class ELSBOXGAME_API AMgPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
+	AMgPlayerController();
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+private:
+	class AMgGameMode* gameMode;
 };
