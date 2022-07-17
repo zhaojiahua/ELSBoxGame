@@ -32,3 +32,15 @@ enum class EMultiButton : uint8
 	Button_Options,
 	Button_LeaderBoard,
 };
+
+UENUM(BlueprintType)
+enum class ETetrisBlock : uint8
+{
+	I,
+	J,
+	L,
+	O,
+	S,
+	T,
+	Z,
+};
