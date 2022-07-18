@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Utilities/MgEnum.h"
 #include "TetrisGrid.generated.h"
 
 UCLASS()
@@ -14,26 +15,36 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& propertyChangeEvent)override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
 
 	//公开的函数
 	UFUNCTION(BlueprintCallable, category = "zjhAddGameFuns")
-		void GenerateTetrisGrid(int inGridWidth, int inGridHeight, int inTileSize);
+		void GenerateTetrisGrid();
 	UFUNCTION(BlueprintPure, category = "zjhAddGameFuns")
 		FVector ConverGridIndexToWorldLocation(FVector2D invector);
 	UFUNCTION(BlueprintPure, category = "zjhAddGameFuns")
 		FVector2D ConverWorldLocationToGridIndex(FVector invector);
 
-	//公开的变量
-	float tileSize = 1.0f;
-	float gridWidth = 1.0f;
-	float gridHeight = 1.0f;
+	void UpdataBlocksQueue();
+	TArray<ETetrisBlock> blocksType;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+	//公开的变量
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+	float tileSize = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+	float gridWidth = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+	float gridHeight = 10.0f;
+
 	class USceneComponent* RootComp;
+	TArray<UChildActorComponent*> blocksQueue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs");
 	TMap<FVector2D, UStaticMeshComponent*> tetrisGridMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+		TSubclassOf<class ATetrisBlockMesh> blockMesh_BP;
 };
