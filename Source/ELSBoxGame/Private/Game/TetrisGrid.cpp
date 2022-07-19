@@ -1,5 +1,6 @@
 #include "Game/TetrisGrid.h"
 #include "Game/TetrisBlockMesh.h"
+#include "Base/MgGameMode.h"
 #include "Components/SceneComponent.h"
 #include "Components/ChildActorComponent.h"
 
@@ -26,24 +27,42 @@ ATetrisGrid::ATetrisGrid()
 void ATetrisGrid::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	gameMode = Cast<AMgGameMode>(GetWorld()->GetAuthGameMode());
+	if (gameMode) gameMode->tetrisGrid = this;
+	StartTetrisGame(true);
 }
 
 void ATetrisGrid::PostEditChangeProperty(FPropertyChangedEvent& propertyChangeEvent)
 {
 	Super::PostEditChangeProperty(propertyChangeEvent);
-	GenerateTetrisGrid();
-	for (int16 i =0;i<blocksQueue.Num();i++)
-	{
-		blocksQueue[i]->SetRelativeLocation(FVector(0.0f, (gridWidth + 2) * tileSize, gridHeight * tileSize / 6.0f * (i + 0.2)));
-	}
-	UpdataBlocksQueue();
+	StartTetrisGame(false);
 }
 
 
 void ATetrisGrid::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+}
+
+void ATetrisGrid::StartTetrisGame(bool bGameBeginPlay)
+{
+	GenerateTetrisGrid();
+	for (int16 i = 0; i < blocksQueue.Num(); i++)
+	{
+		blocksQueue[i]->SetRelativeLocation(FVector(0.0f, (gridWidth + 2) * tileSize, gridHeight * tileSize / 6.0f * (i + 0.2)));
+	}
+	UpdataBlocksQueue();
+	if (bGameBeginPlay)
+	{
+		SpawnNewBlock();
+	}
+}
+
+void ATetrisGrid::SpawnNewBlock()
+{
+	//生成的位置
+	FVector spawnLocation = ConverGridIndexToWorldLocation(FVector2D(FMath::RoundToInt(gridWidth / 2 - 1), FMath::RoundToInt(gridHeight - 3)));
 
 }
 
