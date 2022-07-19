@@ -19,6 +19,8 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+	void StartTetrisGame(bool bGameBeginPlay);
+	void SpawnNewBlock();
 
 	//公开的函数
 	UFUNCTION(BlueprintCallable, category = "zjhAddGameFuns")
@@ -47,4 +49,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
 		TSubclassOf<class ATetrisBlockMesh> blockMesh_BP;
+
+private:
+	//私有变量
+	class AMgGameMode* gameMode;
+
+	//私有函数
 };
