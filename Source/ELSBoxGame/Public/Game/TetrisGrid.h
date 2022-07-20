@@ -9,18 +9,19 @@ UCLASS()
 class ELSBOXGAME_API ATetrisGrid : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ATetrisGrid();
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& propertyChangeEvent)override;
 
-public:	
+public:
 	virtual void Tick(float DeltaTime) override;
 	void StartTetrisGame(bool bGameBeginPlay);
 	void SpawnNewBlock();
+	class ATetrisBlockMesh* GetOneNewBlock(FVector inLocation, ETetrisBlock inBlockType);
 
 	//公开的函数
 	UFUNCTION(BlueprintCallable, category = "zjhAddGameFuns")
@@ -32,17 +33,20 @@ public:
 
 	void UpdataBlocksQueue();
 	TArray<ETetrisBlock> blocksType;
+	bool AreTheyValidIndex(TArray<FVector2D> inIndexs, TArray<FVector2D> inValidOverride);
+	void ReachTheGround();
 
 	//公开的变量
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
-	float tileSize = 10.0f;
+		float tileSize = 10.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
-	float gridWidth = 10.0f;
+		float gridWidth = 10.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
-	float gridHeight = 10.0f;
+		float gridHeight = 10.0f;
 
 	class USceneComponent* RootComp;
 	TArray<UChildActorComponent*> blocksQueue;
+	class ATetrisBlockMesh* oneActiveBlockMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs");
 	TMap<FVector2D, UStaticMeshComponent*> tetrisGridMap;

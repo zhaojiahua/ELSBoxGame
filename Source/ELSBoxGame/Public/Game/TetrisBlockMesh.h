@@ -24,6 +24,10 @@ public:
 	//公开函数
 	void SetBlockVisual();
 	void SetBlockShape(float inTileSize);
+	void SetBlockActive(bool inactive);
+	void DropDownWithTime(float deltaTime);
+	bool BlockMeshMove(FVector2D inDirection);
+	TArray<FVector2D>  GetGridIndexs(FVector2D inOffset);
 
 	//公开变量
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
@@ -56,7 +60,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, category = "zjhAddGameAttrs")
 		FLinearColor color_Z;
 
+	class ATetrisGrid* tetrisGrid;
+
 private:
 	UMaterialInstanceDynamic* blockMaterialDyn;
 	class AMgGameMode* gameMode;
+	bool isActive = false;
+	float tempIntervalTime = 0.0f;
 };

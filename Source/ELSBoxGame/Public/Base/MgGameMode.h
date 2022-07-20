@@ -24,6 +24,7 @@ public:
 	EMultiGames currentGame;
 	class AMgPlayerController* playerController;
 	class AMgHUD* hud;
+	class ATetrisGrid* tetrisGrid;
 
 protected:
 	EMultiGames GetGameFromOpenedLevel();

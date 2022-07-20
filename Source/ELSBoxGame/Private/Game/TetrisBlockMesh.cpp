@@ -1,4 +1,5 @@
 #include "Game/TetrisBlockMesh.h"
+#include "Game/TetrisGrid.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Base/MgGameMode.h"
 
@@ -35,7 +36,7 @@ void ATetrisBlockMesh::PostEditChangeProperty(FPropertyChangedEvent& propertyCha
 void ATetrisBlockMesh::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (isActive) DropDownWithTime(DeltaTime);
 }
 
 void ATetrisBlockMesh::SetBlockVisual()
@@ -146,5 +147,64 @@ void ATetrisBlockMesh::SetBlockShape(float inTileSize)
 		staticMeshComp4->SetRelativeLocation(FVector(0.0f, inTileSize, 0.0f));
 		break;
 	}
+}
+
+void ATetrisBlockMesh::SetBlockActive(bool inactive)
+{
+	isActive = inactive;
+}
+
+void ATetrisBlockMesh::DropDownWithTime(float deltaTime)
+{
+	tempIntervalTime += deltaTime;
+	if (tempIntervalTime>=0.2f)
+	{
+		if (BlockMeshMove(FVector2D(0, -1))==false)
+		{
+			if (tetrisGrid)
+			{
+				tetrisGrid->ReachTheGround();
+			}
+		}
+		tempIntervalTime = 0.0f;
+	}
+}
+
+bool ATetrisBlockMesh::BlockMeshMove(FVector2D inDirection)
+{
+	if (tetrisGrid)
+	{
+		TArray<FVector2D> currentIndexs = GetGridIndexs(FVector2D::ZeroVector);
+		TArray<FVector2D> desiredIndexs = GetGridIndexs(inDirection);
+		if (tetrisGrid->AreTheyValidIndex(desiredIndexs, currentIndexs))
+		{
+			AddActorWorldOffset(FVector(0.0f, inDirection.X * tetrisGrid->tileSize, inDirection.Y * tetrisGrid->tileSize));
+			//remove block from grid
+			tetrisGrid->tetrisGridMap.Add(currentIndexs[0], nullptr);
+			tetrisGrid->tetrisGridMap.Add(currentIndexs[1], nullptr);
+			tetrisGrid->tetrisGridMap.Add(currentIndexs[2], nullptr);
+			tetrisGrid->tetrisGridMap.Add(currentIndexs[3], nullptr);
+			//add block to grid
+			tetrisGrid->tetrisGridMap.Add(desiredIndexs[0], staticMeshComp1);
+			tetrisGrid->tetrisGridMap.Add(desiredIndexs[1], staticMeshComp2);
+			tetrisGrid->tetrisGridMap.Add(desiredIndexs[2], staticMeshComp3);
+			tetrisGrid->tetrisGridMap.Add(desiredIndexs[3], staticMeshComp4);
+			return true;
+		}
+	}
+	return false;
+}
+
+TArray<FVector2D> ATetrisBlockMesh::GetGridIndexs( FVector2D inOffset )
+{
+	if (tetrisGrid)
+	{
+		FVector2D mesh1Index = tetrisGrid->ConverWorldLocationToGridIndex(staticMeshComp1->GetComponentToWorld().GetLocation()) + inOffset;
+		FVector2D mesh2Index = tetrisGrid->ConverWorldLocationToGridIndex(staticMeshComp2->GetComponentToWorld().GetLocation()) + inOffset;
+		FVector2D mesh3Index = tetrisGrid->ConverWorldLocationToGridIndex(staticMeshComp3->GetComponentToWorld().GetLocation()) + inOffset;
+		FVector2D mesh4Index = tetrisGrid->ConverWorldLocationToGridIndex(staticMeshComp4->GetComponentToWorld().GetLocation()) + inOffset;
+		return { mesh1Index ,mesh2Index ,mesh3Index ,mesh4Index };
+	}
+	return TArray<FVector2D>();
 }
 
