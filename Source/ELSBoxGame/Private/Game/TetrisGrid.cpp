@@ -3,6 +3,7 @@
 #include "Base/MgGameMode.h"
 #include "Components/SceneComponent.h"
 #include "Components/ChildActorComponent.h"
+#include "Components/BillboardComponent.h"
 
 
 
@@ -11,7 +12,9 @@ ATetrisGrid::ATetrisGrid()
 	PrimaryActorTick.bCanEverTick = true;
 
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootComp"));
+	billBordComp = CreateDefaultSubobject<UBillboardComponent>(TEXT("billBordComp"));
 	RootComponent = RootComp;
+	billBordComp->SetupAttachment(RootComp);
 	for (int16 i = 0; i < 6; i++)
 	{
 		UChildActorComponent* blockComp = CreateDefaultSubobject<UChildActorComponent>(*("TetrisBlockComp" + FString::FromInt(i + 1)));
@@ -29,7 +32,6 @@ void ATetrisGrid::BeginPlay()
 	Super::BeginPlay();
 	gameMode = Cast<AMgGameMode>(GetWorld()->GetAuthGameMode());
 	if (gameMode) gameMode->tetrisGrid = this;
-	StartTetrisGame(true);
 }
 
 void ATetrisGrid::PostEditChangeProperty(FPropertyChangedEvent& propertyChangeEvent)
@@ -52,22 +54,35 @@ void ATetrisGrid::StartTetrisGame(bool bGameBeginPlay)
 	{
 		blocksQueue[i]->SetRelativeLocation(FVector(0.0f, (gridWidth + 2) * tileSize, gridHeight * tileSize / 6.0f * (i + 0.2)));
 	}
+	billBordComp->SetRelativeLocation(FVector(0.0f, -3 * tileSize, gridHeight * tileSize / 6.0f * 5.0f));
 	UpdataBlocksQueue();
 	if (bGameBeginPlay)
-	{
-		SpawnNewBlock();
-	}
+		SpawnNewBlock(false);
 }
 
-void ATetrisGrid::SpawnNewBlock()
+void ATetrisGrid::SpawnNewBlock(bool bIsUseHoldBlock)
 {
 	//生成方块的位置
-	FVector spawnLocation = ConverGridIndexToWorldLocation(FVector2D(FMath::RoundToInt(gridWidth / 2 - 1), FMath::RoundToInt(gridHeight - 3)));
-	ETetrisBlock tempblockType = blocksType[5];
-	oneActiveBlockMesh = GetOneNewBlock(spawnLocation, tempblockType);
-	if (oneActiveBlockMesh) oneActiveBlockMesh->SetBlockActive(true);
-	blocksType.RemoveAt(5);
-	UpdataBlocksQueue();
+	FVector spawnLocation = ConverGridIndexToWorldLocation(FVector2D(FMath::RoundToInt(gridWidth / 2 - 1), FMath::RoundToInt(gridHeight - 2)));
+	if (!bIsUseHoldBlock)
+	{
+		ETetrisBlock tempblockType = blocksType[5];
+		oneActiveBlockMesh = GetOneNewBlock(spawnLocation, tempblockType);
+		if (oneActiveBlockMesh) oneActiveBlockMesh->SetBlockActive(true);
+		blocksType.RemoveAt(5);
+		UpdataBlocksQueue();
+		bIsHoldblockAndCurrentblock = false;
+	}
+	else
+	{
+		oneActiveBlockMesh = holdTetrisMesh;
+		if (oneActiveBlockMesh)
+		{
+			oneActiveBlockMesh->SetActorLocation(spawnLocation);
+			oneActiveBlockMesh->SetBlockActive(true);
+		}
+	}
+
 }
 
 ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock inBlockType)
@@ -171,5 +186,32 @@ void ATetrisGrid::ReachTheGround()
 		oneActiveBlockMesh->SetBlockActive(false);
 		oneActiveBlockMesh = nullptr;
 	}
-	SpawnNewBlock();
+	SpawnNewBlock(false);
 }
+
+void ATetrisGrid::Hold()
+{
+	if (!bIsHoldblockAndCurrentblock)
+	{
+		bIsHoldblockAndCurrentblock = true;
+		ATetrisBlockMesh* currentBlockMesh = oneActiveBlockMesh;
+		if (currentBlockMesh)
+		{
+			currentBlockMesh->SetBlockActive(false);
+			TArray< FVector2D> currentIndexs = currentBlockMesh->GetGridIndexs(FVector2D(0.0f, 0.0f));
+			tetrisGridMap.Add(currentIndexs[0], nullptr);
+			tetrisGridMap.Add(currentIndexs[1], nullptr);
+			tetrisGridMap.Add(currentIndexs[2], nullptr);
+			tetrisGridMap.Add(currentIndexs[3], nullptr);
+
+			if (billBordComp)
+			{
+				currentBlockMesh->SetActorLocation(billBordComp->GetComponentLocation());
+				currentBlockMesh->SetActorRotation(FRotator(0.0f));
+			}
+		}
+		SpawnNewBlock(holdTetrisMesh != nullptr);
+		holdTetrisMesh = currentBlockMesh;
+	}
+}
+

@@ -20,7 +20,7 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	void StartTetrisGame(bool bGameBeginPlay);
-	void SpawnNewBlock();
+	void SpawnNewBlock(bool bIsUseHoldBlock);
 	class ATetrisBlockMesh* GetOneNewBlock(FVector inLocation, ETetrisBlock inBlockType);
 
 	//公开的函数
@@ -35,6 +35,8 @@ public:
 	TArray<ETetrisBlock> blocksType;
 	bool AreTheyValidIndex(TArray<FVector2D> inIndexs, TArray<FVector2D> inValidOverride);
 	void ReachTheGround();
+	void Hold();
+
 
 	//公开的变量
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
@@ -45,6 +47,7 @@ public:
 		float gridHeight = 10.0f;
 
 	class USceneComponent* RootComp;
+	class UBillboardComponent* billBordComp;
 	TArray<UChildActorComponent*> blocksQueue;
 	class ATetrisBlockMesh* oneActiveBlockMesh;
 
@@ -57,6 +60,9 @@ public:
 private:
 	//私有变量
 	class AMgGameMode* gameMode;
+	class ATetrisBlockMesh* holdTetrisMesh;
+	bool bIsHoldblockAndCurrentblock = false;
 
 	//私有函数
+
 };

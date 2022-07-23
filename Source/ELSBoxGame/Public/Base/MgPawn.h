@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
@@ -10,18 +10,43 @@ class ELSBOXGAME_API AMgPawn : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
 	AMgPawn();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	//受保护变量
+	float sensitivityLeftRightTimer = 0.0f;
+	float sensitivityUpDownTimer = 0.0f;
+
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetInputForCurrentGame();
 
+	virtual void InputLeftRight(float inAxisValue);
+	virtual void InputUpDown(float inAxisValue);
+	virtual void InputFirstAction();
+	virtual void InputSecondAction();
+	virtual void InputThirdAction();
+
+	void InputLeftPressed();
+	void InputLeftReleased();
+	void InputRightPressed();
+	void InputRightReleased();
+	void InputDownPressed();
+	void InputDownReleased();
+	void InputUpPressed();
+	void InputUpReleased();
+
+	//公开的变量
+	bool bIsLeftPressed = false;
+	bool bIsRightPressed = false;
+	bool bIsDownPressed = false;
+	bool bIsUpPressed = false;
+	float sensitivityLeftRight = 0.15f;
+	float sensitivityUpDown = 0.15f;
+
+	class AMgGameMode* gameMode;
 };

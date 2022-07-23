@@ -27,7 +27,14 @@ public:
 	void SetBlockActive(bool inactive);
 	void DropDownWithTime(float deltaTime);
 	bool BlockMeshMove(FVector2D inDirection);
+	bool BlockMeshRotate(FRotator inRotation);
 	TArray<FVector2D>  GetGridIndexs(FVector2D inOffset);
+
+	void MoveSelfLeft();
+	void MoveSelfRight();
+	void MoveSelfDown();
+	void HardDrop();
+	void RotateSelf();
 
 	//公开变量
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")

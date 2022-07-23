@@ -1,6 +1,6 @@
 #include "Base/MgGameMode.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "Game/TetrisGrid.h"
 
 AMgGameMode::AMgGameMode()
 {
@@ -33,6 +33,23 @@ void AMgGameMode::SwitchGame(EMultiGames inGame)
 		break;
 	case EMultiGames::Game_PacMan:
 		UGameplayStatics::OpenLevel(this, "Map_PacMan");
+		break;
+	}
+}
+
+void AMgGameMode::PlayCurrentGame()
+{
+	switch (currentGame)
+	{
+	default:
+	case EMultiGames::Game_None:
+		break;
+	case EMultiGames::Game_Multi:
+		break;
+	case EMultiGames::Game_Tetris:
+		if (tetrisGrid) tetrisGrid->StartTetrisGame(true);
+		break;
+	case EMultiGames::Game_PacMan:
 		break;
 	}
 }

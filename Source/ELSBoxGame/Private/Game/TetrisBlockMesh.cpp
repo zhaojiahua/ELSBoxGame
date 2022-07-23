@@ -100,6 +100,11 @@ void ATetrisBlockMesh::SetBlockShape(float inTileSize)
 	staticMeshComp2->SetRelativeScale3D(FVector(inTileSize / 100.0f));
 	staticMeshComp3->SetRelativeScale3D(FVector(inTileSize / 100.0f));
 	staticMeshComp4->SetRelativeScale3D(FVector(inTileSize / 100.0f));
+	//rotate
+	staticMeshComp1->SetWorldRotation(FRotator(90.0f,0.0f,0.0f));
+	staticMeshComp2->SetWorldRotation(FRotator(90.0f,0.0f,0.0f));
+	staticMeshComp3->SetWorldRotation(FRotator(90.0f,0.0f,0.0f));
+	staticMeshComp4->SetWorldRotation(FRotator(90.0f,0.0f,0.0f));
 	//position
 	switch (currentBlock)
 	{
@@ -157,7 +162,7 @@ void ATetrisBlockMesh::SetBlockActive(bool inactive)
 void ATetrisBlockMesh::DropDownWithTime(float deltaTime)
 {
 	tempIntervalTime += deltaTime;
-	if (tempIntervalTime>=0.2f)
+	if (tempIntervalTime>=0.5f)
 	{
 		if (BlockMeshMove(FVector2D(0, -1))==false)
 		{
@@ -195,6 +200,52 @@ bool ATetrisBlockMesh::BlockMeshMove(FVector2D inDirection)
 	return false;
 }
 
+bool ATetrisBlockMesh::BlockMeshRotate(FRotator inRotation)
+{
+	FVector InitialLocation = GetActorLocation();
+	FRotator InitialRotation = GetActorRotation();
+	TArray<FVector2D> currentIndex = GetGridIndexs(FVector2D(0.0f));
+	//rotate
+	AddActorWorldRotation(inRotation);
+	TArray<FVector2D> locationsToTry = { FVector2D(0.0f) };
+	locationsToTry.Append({ FVector2D(1.0f,0.0f),FVector2D(-1.0f,0.0f) });
+	if (currentBlock == ETetrisBlock::I)locationsToTry.Add(FVector2D(-2.0f, 0.0f));
+
+	//check valid
+	if (tetrisGrid)
+	{
+		for (FVector2D location:locationsToTry)
+		{
+			SetActorLocation(InitialLocation);
+			AddActorWorldOffset(FVector(0.0f, location.X * tetrisGrid->tileSize, location.Y * tetrisGrid->tileSize));
+
+			TArray<FVector2D> desiredIndex = GetGridIndexs(FVector2D(0.0f));
+			if (tetrisGrid->AreTheyValidIndex(desiredIndex, currentIndex))
+			{
+				//remove block from grid
+				tetrisGrid->tetrisGridMap.Add(currentIndex[0], nullptr);
+				tetrisGrid->tetrisGridMap.Add(currentIndex[1], nullptr);
+				tetrisGrid->tetrisGridMap.Add(currentIndex[2], nullptr);
+				tetrisGrid->tetrisGridMap.Add(currentIndex[3], nullptr);
+				//add block to grid
+				tetrisGrid->tetrisGridMap.Add(desiredIndex[0], staticMeshComp1);
+				tetrisGrid->tetrisGridMap.Add(desiredIndex[1], staticMeshComp2);
+				tetrisGrid->tetrisGridMap.Add(desiredIndex[2], staticMeshComp3);
+				tetrisGrid->tetrisGridMap.Add(desiredIndex[3], staticMeshComp4);
+				//rotate
+				staticMeshComp1->SetWorldRotation(FRotator(90.0f, 0.0f, 0.0f));
+				staticMeshComp2->SetWorldRotation(FRotator(90.0f, 0.0f, 0.0f));
+				staticMeshComp3->SetWorldRotation(FRotator(90.0f, 0.0f, 0.0f));
+				staticMeshComp4->SetWorldRotation(FRotator(90.0f, 0.0f, 0.0f));
+				return true;
+			}
+		}
+	}
+	SetActorLocation(InitialLocation);
+	SetActorRotation(InitialRotation);
+	return false;
+}
+
 TArray<FVector2D> ATetrisBlockMesh::GetGridIndexs( FVector2D inOffset )
 {
 	if (tetrisGrid)
@@ -206,5 +257,45 @@ TArray<FVector2D> ATetrisBlockMesh::GetGridIndexs( FVector2D inOffset )
 		return { mesh1Index ,mesh2Index ,mesh3Index ,mesh4Index };
 	}
 	return TArray<FVector2D>();
+}
+
+void ATetrisBlockMesh::MoveSelfLeft()
+{
+	BlockMeshMove(FVector2D(-1.0f, 0.0f));
+}
+
+void ATetrisBlockMesh::MoveSelfRight()
+{
+	BlockMeshMove(FVector2D(1.0f, 0.0f));
+}
+
+void ATetrisBlockMesh::MoveSelfDown()
+{
+	if (BlockMeshMove(FVector2D(0.0f, -1.0f)))
+		tempIntervalTime = 0.0f;
+}
+
+void ATetrisBlockMesh::HardDrop()
+{
+	while (BlockMeshMove(FVector2D(0.0f, -1.0f)))
+		tempIntervalTime = 0.0f;
+	if (tetrisGrid)
+	{
+		tetrisGrid->ReachTheGround();
+	}
+}
+
+void ATetrisBlockMesh::RotateSelf()
+{
+	FRotator desiredRotation = FRotator(0.0f, 0.0f, 90.0f);
+	if (currentBlock == ETetrisBlock::O) return;
+	if (currentBlock==ETetrisBlock::I)
+	{
+		if (GetActorRotation().Equals(FRotator(0.0f), 5.0f))
+		{
+			desiredRotation = FRotator(0.0f, 0.0f, -90.0f);
+		}
+	}
+	BlockMeshRotate(desiredRotation);
 }
 

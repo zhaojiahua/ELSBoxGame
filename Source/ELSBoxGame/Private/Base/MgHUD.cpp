@@ -2,6 +2,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Base/MgUserWidget.h"
 #include "Base/MgGameMode.h"
+#include "Game/TetrisGrid.h"
 
 void AMgHUD::BeginPlay()
 {
@@ -65,6 +66,7 @@ void AMgHUD::ButtonClicked(EMultiButton inButton)
 			break;
 		case EMultiButton::Button_Play:
 			ShowWidget(gameMode->currentGame, EMultiMenu::Menu_Game);
+			gameMode->PlayCurrentGame();
 			break;
 		case EMultiButton::Button_Pause:
 			ShowWidget(gameMode->currentGame, EMultiMenu::Menu_Pause);

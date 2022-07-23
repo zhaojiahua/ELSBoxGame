@@ -19,12 +19,14 @@ protected:
 public:
 	//公开的函数
 	void SwitchGame(EMultiGames inGame);
+	void PlayCurrentGame();
 	
 	//公开的变量
 	EMultiGames currentGame;
 	class AMgPlayerController* playerController;
 	class AMgHUD* hud;
 	class ATetrisGrid* tetrisGrid;
+	class AMgPawn* pawn;
 
 protected:
 	EMultiGames GetGameFromOpenedLevel();
