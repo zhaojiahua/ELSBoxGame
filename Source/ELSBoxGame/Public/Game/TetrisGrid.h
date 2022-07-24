@@ -32,11 +32,19 @@ public:
 		FVector2D ConverWorldLocationToGridIndex(FVector invector);
 
 	void UpdataBlocksQueue();
-	TArray<ETetrisBlock> blocksType;
+	void UpdataBlocksShadow();
 	bool AreTheyValidIndex(TArray<FVector2D> inIndexs, TArray<FVector2D> inValidOverride);
 	void ReachTheGround();
 	void Hold();
 
+	void RemoveFullRows();
+	bool IsRowFull(int inRowIndex);
+	void DeleteFullRow(int inRowIndex);
+	void DecreaseRowsAbove(int inRowIndex);
+
+	void IncreasePoints(ETetrisScore inScoreType);
+	void LevelUp();
+	void GameOver();
 
 	//公开的变量
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
@@ -47,21 +55,41 @@ public:
 		float gridHeight = 10.0f;
 
 	class USceneComponent* RootComp;
-	class UBillboardComponent* billBordComp;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
+		class UBillboardComponent* billBordComp;
 	TArray<UChildActorComponent*> blocksQueue;
 	class ATetrisBlockMesh* oneActiveBlockMesh;
+	class UChildActorComponent* tetrisBlockShadowComp;
 
+	TArray<ETetrisBlock> blocksType;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs");
 	TMap<FVector2D, UStaticMeshComponent*> tetrisGridMap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, category = "zjhAddGameAttrs")
 		TSubclassOf<class ATetrisBlockMesh> blockMesh_BP;
 
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs")
+		float currentGameSpeed;
+	const float additionalTimeOnGround = 0.2;
+	const int maxLevel = 10;
+
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs-score")
+		int currentLevel;
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs-score")
+		int currentCompletedRowCount;
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs-score")
+		int currentCombo;
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs-score")
+		int currentPoints;
+	UPROPERTY(BlueprintReadOnly, category = "zjhAddGameAttrs-score")
+		ETetrisScore lastTetrisScore;
+
 private:
 	//私有变量
 	class AMgGameMode* gameMode;
 	class ATetrisBlockMesh* holdTetrisMesh;
 	bool bIsHoldblockAndCurrentblock = false;
+	TArray<class ATetrisBlockMesh*> spawnTetrisBlocks;
 
 	//私有函数
 

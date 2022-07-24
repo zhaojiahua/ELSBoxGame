@@ -66,8 +66,11 @@ public:
 		FLinearColor color_T;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, category = "zjhAddGameAttrs")
 		FLinearColor color_Z;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, category = "zjhAddGameAttrs")
+		FLinearColor color_Shadow = FLinearColor(0.1f, 0.1f, 0.1f, 0.2f);
 
 	class ATetrisGrid* tetrisGrid;
+	bool bIsShadow = false;
 
 private:
 	UMaterialInstanceDynamic* blockMaterialDyn;

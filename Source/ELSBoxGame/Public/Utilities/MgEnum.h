@@ -44,3 +44,17 @@ enum class ETetrisBlock : uint8
 	T,
 	Z,
 };
+
+UENUM(BlueprintType)
+enum class ETetrisScore : uint8
+{
+	None,
+	SingleRow,
+	DoubleRow,
+	TripleRow,
+	Tetris,
+	BackToBackTetris,
+	SoftDrop,
+	HardDrop,
+	FullClear,
+};

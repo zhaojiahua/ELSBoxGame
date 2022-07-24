@@ -13,8 +13,11 @@ ATetrisGrid::ATetrisGrid()
 
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootComp"));
 	billBordComp = CreateDefaultSubobject<UBillboardComponent>(TEXT("billBordComp"));
+	tetrisBlockShadowComp= CreateDefaultSubobject<UChildActorComponent>(TEXT("tetrisBlockShadowComp"));
+
 	RootComponent = RootComp;
 	billBordComp->SetupAttachment(RootComp);
+	tetrisBlockShadowComp->SetupAttachment(RootComp);
 	for (int16 i = 0; i < 6; i++)
 	{
 		UChildActorComponent* blockComp = CreateDefaultSubobject<UChildActorComponent>(*("TetrisBlockComp" + FString::FromInt(i + 1)));
@@ -49,12 +52,21 @@ void ATetrisGrid::Tick(float DeltaTime)
 
 void ATetrisGrid::StartTetrisGame(bool bGameBeginPlay)
 {
+	currentLevel = 1;
+	currentCompletedRowCount=0;
+	currentCombo = 0;
+	currentPoints = 0;
+	lastTetrisScore = ETetrisScore::None;
+	currentGameSpeed = 1.0f;
+	oneActiveBlockMesh = nullptr;
+	holdTetrisMesh = nullptr;
+
 	GenerateTetrisGrid();
 	for (int16 i = 0; i < blocksQueue.Num(); i++)
 	{
 		blocksQueue[i]->SetRelativeLocation(FVector(0.0f, (gridWidth + 2) * tileSize, gridHeight * tileSize / 6.0f * (i + 0.2)));
 	}
-	billBordComp->SetRelativeLocation(FVector(0.0f, -3 * tileSize, gridHeight * tileSize / 6.0f * 5.0f));
+	billBordComp->SetRelativeLocation(FVector(0.0f, -4 * tileSize, gridHeight * tileSize / 6.0f * 5.0f));
 	UpdataBlocksQueue();
 	if (bGameBeginPlay)
 		SpawnNewBlock(false);
@@ -66,23 +78,36 @@ void ATetrisGrid::SpawnNewBlock(bool bIsUseHoldBlock)
 	FVector spawnLocation = ConverGridIndexToWorldLocation(FVector2D(FMath::RoundToInt(gridWidth / 2 - 1), FMath::RoundToInt(gridHeight - 2)));
 	if (!bIsUseHoldBlock)
 	{
-		ETetrisBlock tempblockType = blocksType[5];
+		ETetrisBlock tempblockType = blocksType[0];
 		oneActiveBlockMesh = GetOneNewBlock(spawnLocation, tempblockType);
 		if (oneActiveBlockMesh) oneActiveBlockMesh->SetBlockActive(true);
-		blocksType.RemoveAt(5);
+		blocksType.RemoveAt(0);
 		UpdataBlocksQueue();
 		bIsHoldblockAndCurrentblock = false;
 	}
 	else
 	{
 		oneActiveBlockMesh = holdTetrisMesh;
-		if (oneActiveBlockMesh)
+		if (oneActiveBlockMesh)	oneActiveBlockMesh->SetActorLocation(spawnLocation);
+	}
+	if (oneActiveBlockMesh)
+	{
+		TArray<FVector2D> spawnBlockIndexs = oneActiveBlockMesh->GetGridIndexs(FVector2D(0.0f));
+		if (AreTheyValidIndex(spawnBlockIndexs, TArray<FVector2D>()))
 		{
-			oneActiveBlockMesh->SetActorLocation(spawnLocation);
+			tetrisGridMap.Add(spawnBlockIndexs[0], oneActiveBlockMesh->staticMeshComp1);
+			tetrisGridMap.Add(spawnBlockIndexs[1], oneActiveBlockMesh->staticMeshComp2);
+			tetrisGridMap.Add(spawnBlockIndexs[2], oneActiveBlockMesh->staticMeshComp3);
+			tetrisGridMap.Add(spawnBlockIndexs[3], oneActiveBlockMesh->staticMeshComp4);
 			oneActiveBlockMesh->SetBlockActive(true);
 		}
+		else
+		{
+			oneActiveBlockMesh->SetBlockActive(false);
+			GameOver();
+		}
 	}
-
+	UpdataBlocksShadow();
 }
 
 ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock inBlockType)
@@ -97,6 +122,7 @@ ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock i
 			tempblockMesh->currentBlock = inBlockType;
 			tempblockMesh->SetBlockShape(tileSize);
 			tempblockMesh->SetBlockVisual();
+			spawnTetrisBlocks.Add(tempblockMesh);
 		}
 	}
 	return tempblockMesh;
@@ -105,6 +131,10 @@ ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock i
 void ATetrisGrid::GenerateTetrisGrid()
 {
 	tetrisGridMap.Empty();
+	for (ATetrisBlockMesh* tetrisBlock:spawnTetrisBlocks)
+	{
+		tetrisBlock->SetActorHiddenInGame(true);
+	}
 	for (int i = 0; i < gridWidth; i++)
 	{
 		for (int j = 0; j < gridHeight; j++)
@@ -166,6 +196,38 @@ void ATetrisGrid::UpdataBlocksQueue()
 	}
 }
 
+void ATetrisGrid::UpdataBlocksShadow()
+{
+	if (blockMesh_BP)
+	{
+		if (tetrisBlockShadowComp)
+		{
+			ATetrisBlockMesh* tempActor = Cast<ATetrisBlockMesh>(tetrisBlockShadowComp->GetChildActor());
+			if (tempActor==nullptr)
+			{
+				tetrisBlockShadowComp->SetChildActorClass(blockMesh_BP);
+				tempActor = Cast<ATetrisBlockMesh>(tetrisBlockShadowComp->GetChildActor());
+			}
+			if (tempActor&&oneActiveBlockMesh)
+			{
+				tempActor->tetrisGrid = this;
+				tempActor->currentBlock = oneActiveBlockMesh->currentBlock;
+				tempActor->bIsShadow = true;
+				tempActor->SetBlockShape(tileSize);
+				tempActor->SetActorTransform(oneActiveBlockMesh->GetActorTransform());
+				tempActor->SetBlockVisual();
+
+				TArray<FVector2D> initialGridIndexs = tempActor->GetGridIndexs(FVector2D(0.0f));
+				while (AreTheyValidIndex(tempActor->GetGridIndexs(FVector2D(0.0f,-1.0f)), initialGridIndexs))
+				{
+					tempActor->AddActorWorldOffset(FVector(0.0f, 0.0f, -1.0 * tileSize));
+				}
+				tempActor->AddActorWorldOffset(FVector(20.0f, 0.0f, 0.0f));
+			}
+		}
+	}
+}
+
 bool ATetrisGrid::AreTheyValidIndex(TArray<FVector2D> inIndexs, TArray<FVector2D> inValidOverride)
 {
 	for (FVector2D itemIndex : inIndexs)
@@ -187,6 +249,7 @@ void ATetrisGrid::ReachTheGround()
 		oneActiveBlockMesh = nullptr;
 	}
 	SpawnNewBlock(false);
+	RemoveFullRows();
 }
 
 void ATetrisGrid::Hold()
@@ -213,5 +276,151 @@ void ATetrisGrid::Hold()
 		SpawnNewBlock(holdTetrisMesh != nullptr);
 		holdTetrisMesh = currentBlockMesh;
 	}
+}
+
+void ATetrisGrid::RemoveFullRows()
+{
+	int tempCompeleteRowCount = 0;
+	for (int Y=0;Y<gridHeight;Y++)
+	{
+		if (IsRowFull(Y))
+		{
+			DeleteFullRow(Y);
+			DecreaseRowsAbove(Y);
+			Y--;
+			currentCompletedRowCount++;
+			tempCompeleteRowCount++;
+			if (currentCompletedRowCount % 10 == 0)	LevelUp();
+		}
+	}
+	if (tempCompeleteRowCount > 0)
+	{
+		currentCombo++;
+		switch (tempCompeleteRowCount)
+		{
+		case 1:
+			IncreasePoints(ETetrisScore::SingleRow);
+			break;
+		case 2:
+			IncreasePoints(ETetrisScore::DoubleRow);
+			break;
+		case 3:
+			IncreasePoints(ETetrisScore::TripleRow);
+			break;
+		case 4:
+			if (lastTetrisScore == ETetrisScore::Tetris || lastTetrisScore == ETetrisScore::BackToBackTetris)
+			{
+				IncreasePoints(ETetrisScore::BackToBackTetris);
+			}
+			else IncreasePoints(ETetrisScore::Tetris);
+			break;
+		default:
+			break;
+		}
+		bool isFullClear = true;
+		for (int x = 0; x < gridWidth; x++)
+		{
+			if (tetrisGridMap[FVector2D(x,0)]!=nullptr)
+			{
+				isFullClear = false;
+				break;
+			}
+		}
+		if (isFullClear)	IncreasePoints(ETetrisScore::FullClear);
+	}
+	else
+	{
+		currentCombo = 0;
+		lastTetrisScore = ETetrisScore::None;
+	}
+	UpdataBlocksShadow();
+}
+
+bool ATetrisGrid::IsRowFull(int inRowIndex)
+{
+	for (int x =0;x<gridWidth;x++)
+	{
+		if (tetrisGridMap.Contains(FVector2D(x,inRowIndex)))
+		{
+			if (tetrisGridMap[FVector2D(x, inRowIndex)] == nullptr) return false;
+		}
+	}
+	return true;
+}
+
+void ATetrisGrid::DeleteFullRow(int inRowIndex)
+{
+	for (int x=0;x<gridWidth;x++)
+	{
+		tetrisGridMap[FVector2D(x, inRowIndex)]->SetHiddenInGame(true);
+		tetrisGridMap.Add(FVector2D(x, inRowIndex), nullptr);
+	}
+}
+
+void ATetrisGrid::DecreaseRowsAbove(int inRowIndex)
+{
+	for (int y = inRowIndex+1; y < gridHeight; y++)
+	{
+		for (int x=0;x<gridWidth;x++)
+		{
+			if (tetrisGridMap[FVector2D(x, y)])
+			{
+				tetrisGridMap[FVector2D(x, y)]->AddWorldOffset(FVector(0.0f, 0.0f, -1.0f * tileSize));
+				tetrisGridMap.Add(FVector2D(x, y - 1), tetrisGridMap[FVector2D(x, y)]);
+				tetrisGridMap.Add(FVector2D(x, y), nullptr);
+			}
+		}
+	}
+}
+
+void ATetrisGrid::IncreasePoints(ETetrisScore inScoreType)
+{
+	switch (inScoreType)
+	{
+	case ETetrisScore::SingleRow:
+		currentPoints += 10 * currentLevel + 2 * currentCombo * currentLevel;
+		break;
+	case ETetrisScore::DoubleRow:
+		currentPoints += 20 * currentLevel + 5 * currentCombo * currentLevel;
+		break;
+	case ETetrisScore::TripleRow:
+		currentPoints += 40 * currentLevel + 5 * currentCombo * currentLevel;
+		break;
+	case ETetrisScore::Tetris:
+		currentPoints += 80 * currentLevel + 5 * currentCombo * currentLevel;
+		break;
+	case ETetrisScore::BackToBackTetris:
+		currentPoints += 150 * currentLevel + 5 * currentCombo * currentLevel;
+		break;
+	case ETetrisScore::SoftDrop:
+		currentPoints += 1;
+		break;
+	case ETetrisScore::HardDrop:
+		currentPoints += 20; 
+		break;
+	case ETetrisScore::FullClear:
+		currentPoints += 300 * currentLevel;
+		break;
+	default:
+		break;
+	}
+	if (inScoreType !=ETetrisScore::SoftDrop&&inScoreType !=ETetrisScore::HardDrop)
+	{
+		lastTetrisScore = inScoreType;
+	}
+}
+
+void ATetrisGrid::LevelUp()
+{
+	if (currentLevel<maxLevel)
+	{
+		currentLevel++;
+		currentGameSpeed -= currentGameSpeed / 3.0f;
+	}
+}
+
+void ATetrisGrid::GameOver()
+{
+	StartTetrisGame(true);
 }
 

@@ -61,33 +61,46 @@ void ATetrisBlockMesh::SetBlockVisual()
 			if (blockMaterialDyn)
 			{
 				FLinearColor tempColor;
-				switch (currentBlock)
+				float tempOpacity = 1.0f;
+				if (!bIsShadow)
 				{
-				case ETetrisBlock::I:
-					tempColor = color_I;
-					break;
-				case ETetrisBlock::J:
-					tempColor = color_J;
-					break;
-				case ETetrisBlock::L:
-					tempColor = color_L;
-					break;
-				case ETetrisBlock::O:
-					tempColor = color_O;
-					break;
-				case ETetrisBlock::S:
-					tempColor = color_S;
-					break;
-				case ETetrisBlock::T:
-					tempColor = color_T;
-					break;
-				case ETetrisBlock::Z:
-					tempColor = color_Z;
-					break;
-				default:
-					break;
+					switch (currentBlock)
+					{
+					case ETetrisBlock::I:
+						tempColor = color_I;
+						break;
+					case ETetrisBlock::J:
+						tempColor = color_J;
+						break;
+					case ETetrisBlock::L:
+						tempColor = color_L;
+						break;
+					case ETetrisBlock::O:
+						tempColor = color_O;
+						break;
+					case ETetrisBlock::S:
+						tempColor = color_S;
+						break;
+					case ETetrisBlock::T:
+						tempColor = color_T;
+						break;
+					case ETetrisBlock::Z:
+						tempColor = color_Z;
+						break;
+					default:
+						break;
+					}
 				}
-				blockMaterialDyn->SetVectorParameterValue("baseColor", tempColor);
+				else 
+				{
+					tempColor = color_Shadow;
+					tempOpacity = 0.6;
+				}
+				if (blockMaterialDyn)
+				{
+					blockMaterialDyn->SetVectorParameterValue("baseColor", tempColor);
+					blockMaterialDyn->SetScalarParameterValue("opacity", tempOpacity);
+				}
 			}
 		}
 	}
@@ -162,16 +175,20 @@ void ATetrisBlockMesh::SetBlockActive(bool inactive)
 void ATetrisBlockMesh::DropDownWithTime(float deltaTime)
 {
 	tempIntervalTime += deltaTime;
-	if (tempIntervalTime>=0.5f)
+	if (tempIntervalTime>= tetrisGrid->currentGameSpeed)
 	{
-		if (BlockMeshMove(FVector2D(0, -1))==false)
+		if (BlockMeshMove(FVector2D(0, -1)) == false)
 		{
 			if (tetrisGrid)
 			{
-				tetrisGrid->ReachTheGround();
+				if (tempIntervalTime >= tetrisGrid->currentGameSpeed + tetrisGrid->additionalTimeOnGround)
+				{
+					tetrisGrid->ReachTheGround();
+					tempIntervalTime = 0.0f;
+				}
 			}
 		}
-		tempIntervalTime = 0.0f;
+		else	tempIntervalTime = 0.0f;
 	}
 }
 
@@ -261,28 +278,43 @@ TArray<FVector2D> ATetrisBlockMesh::GetGridIndexs( FVector2D inOffset )
 
 void ATetrisBlockMesh::MoveSelfLeft()
 {
-	BlockMeshMove(FVector2D(-1.0f, 0.0f));
+	if (BlockMeshMove(FVector2D(-1.0f, 0.0f)))
+	{
+		if (tetrisGrid)
+			tetrisGrid->UpdataBlocksShadow();
+	}
 }
 
 void ATetrisBlockMesh::MoveSelfRight()
 {
-	BlockMeshMove(FVector2D(1.0f, 0.0f));
+	if (BlockMeshMove(FVector2D(1.0f, 0.0f)))
+	{
+		if (tetrisGrid)
+			tetrisGrid->UpdataBlocksShadow();
+	}
 }
 
 void ATetrisBlockMesh::MoveSelfDown()
 {
 	if (BlockMeshMove(FVector2D(0.0f, -1.0f)))
+	{
 		tempIntervalTime = 0.0f;
+		if (tetrisGrid)	tetrisGrid->IncreasePoints(ETetrisScore::SoftDrop);
+	}
 }
 
 void ATetrisBlockMesh::HardDrop()
 {
 	while (BlockMeshMove(FVector2D(0.0f, -1.0f)))
+	{
 		tempIntervalTime = 0.0f;
+	}
 	if (tetrisGrid)
 	{
 		tetrisGrid->ReachTheGround();
+		tetrisGrid->IncreasePoints(ETetrisScore::HardDrop);
 	}
+		
 }
 
 void ATetrisBlockMesh::RotateSelf()
@@ -296,6 +328,10 @@ void ATetrisBlockMesh::RotateSelf()
 			desiredRotation = FRotator(0.0f, 0.0f, -90.0f);
 		}
 	}
-	BlockMeshRotate(desiredRotation);
+	if (BlockMeshRotate(desiredRotation))
+	{
+		if (tetrisGrid)
+			tetrisGrid->UpdataBlocksShadow();
+	}
 }
 
