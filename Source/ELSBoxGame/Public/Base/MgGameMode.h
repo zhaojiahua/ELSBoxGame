@@ -20,6 +20,8 @@ public:
 	//公开的函数
 	void SwitchGame(EMultiGames inGame);
 	void PlayCurrentGame();
+	void PauseCurrentGame();
+	void ResumeCurrentGame();
 	
 	//公开的变量
 	EMultiGames currentGame;

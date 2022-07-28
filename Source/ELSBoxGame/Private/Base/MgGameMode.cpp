@@ -1,16 +1,17 @@
 #include "Base/MgGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Game/TetrisGrid.h"
+#include "Base/MgPlayerController.h"
 
 AMgGameMode::AMgGameMode()
 {
-
 }
 
 void AMgGameMode::InitGameState()
 {
 	Super::InitGameState();
 	currentGame = GetGameFromOpenedLevel();
+	playerController = Cast<AMgPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 }
 
 void AMgGameMode::Tick(float DeltaTime)
@@ -52,6 +53,20 @@ void AMgGameMode::PlayCurrentGame()
 	case EMultiGames::Game_PacMan:
 		break;
 	}
+	if (playerController)		playerController->SetPause(true);
+}
+
+void AMgGameMode::PauseCurrentGame()
+{
+	if (playerController)
+	{
+		playerController->SetPause(true);
+	}
+}
+
+void AMgGameMode::ResumeCurrentGame()
+{
+	playerController->SetPause(false);
 }
 
 EMultiGames AMgGameMode::GetGameFromOpenedLevel()

@@ -44,6 +44,7 @@ public:
 
 	void IncreasePoints(ETetrisScore inScoreType);
 	void LevelUp();
+	void PoolTetrisBlock(class ATetrisBlockMesh* inblock);
 	void GameOver();
 
 	//公开的变量
@@ -90,6 +91,7 @@ private:
 	class ATetrisBlockMesh* holdTetrisMesh;
 	bool bIsHoldblockAndCurrentblock = false;
 	TArray<class ATetrisBlockMesh*> spawnTetrisBlocks;
+	TArray<class ATetrisBlockMesh*> pooledTetrisBlocks;
 
 	//私有函数
 

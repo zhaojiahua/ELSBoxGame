@@ -299,7 +299,11 @@ void ATetrisBlockMesh::MoveSelfDown()
 	if (BlockMeshMove(FVector2D(0.0f, -1.0f)))
 	{
 		tempIntervalTime = 0.0f;
-		if (tetrisGrid)	tetrisGrid->IncreasePoints(ETetrisScore::SoftDrop);
+		if (tetrisGrid)
+		{
+			tetrisGrid->IncreasePoints(ETetrisScore::SoftDrop);
+			tetrisGrid->UpdataBlocksShadow();
+		}
 	}
 }
 
@@ -313,6 +317,7 @@ void ATetrisBlockMesh::HardDrop()
 	{
 		tetrisGrid->ReachTheGround();
 		tetrisGrid->IncreasePoints(ETetrisScore::HardDrop);
+		tetrisGrid->UpdataBlocksShadow();
 	}
 		
 }

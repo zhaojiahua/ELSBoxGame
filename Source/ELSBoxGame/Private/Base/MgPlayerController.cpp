@@ -20,3 +20,8 @@ void AMgPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
+void AMgPlayerController::SetPause(bool inB)
+{
+
+}

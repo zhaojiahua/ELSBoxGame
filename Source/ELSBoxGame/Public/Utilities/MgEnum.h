@@ -29,6 +29,7 @@ enum class EMultiButton : uint8
 	Button_MainMenu,
 	Button_Play,
 	Button_Pause,
+	Button_Resume,
 	Button_Options,
 	Button_LeaderBoard,
 };

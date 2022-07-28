@@ -4,6 +4,8 @@
 #include "Components/SceneComponent.h"
 #include "Components/ChildActorComponent.h"
 #include "Components/BillboardComponent.h"
+#include "Base/MgHUD.h"
+#include "Base/MgUserWidget.h"
 
 
 
@@ -61,6 +63,14 @@ void ATetrisGrid::StartTetrisGame(bool bGameBeginPlay)
 	oneActiveBlockMesh = nullptr;
 	holdTetrisMesh = nullptr;
 
+	if (gameMode&&gameMode->hud&&gameMode->hud->GetWidget(EMultiGames::Game_Tetris))
+	{
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataPoints(currentPoints);
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataCombo(currentCombo);
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataLevel(currentLevel);
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataProgression(currentCompletedRowCount);
+	}
+
 	GenerateTetrisGrid();
 	for (int16 i = 0; i < blocksQueue.Num(); i++)
 	{
@@ -90,6 +100,7 @@ void ATetrisGrid::SpawnNewBlock(bool bIsUseHoldBlock)
 		oneActiveBlockMesh = holdTetrisMesh;
 		if (oneActiveBlockMesh)	oneActiveBlockMesh->SetActorLocation(spawnLocation);
 	}
+	UpdataBlocksShadow();
 	if (oneActiveBlockMesh)
 	{
 		TArray<FVector2D> spawnBlockIndexs = oneActiveBlockMesh->GetGridIndexs(FVector2D(0.0f));
@@ -107,7 +118,6 @@ void ATetrisGrid::SpawnNewBlock(bool bIsUseHoldBlock)
 			GameOver();
 		}
 	}
-	UpdataBlocksShadow();
 }
 
 ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock inBlockType)
@@ -115,14 +125,30 @@ ATetrisBlockMesh* ATetrisGrid::GetOneNewBlock(FVector inLocation, ETetrisBlock i
 	ATetrisBlockMesh* tempblockMesh = nullptr;
 	if (blockMesh_BP)
 	{
-		tempblockMesh = GetWorld()->SpawnActor<ATetrisBlockMesh>(blockMesh_BP, inLocation, FRotator::ZeroRotator);
+		if (pooledTetrisBlocks.Num()>0)
+		{
+			tempblockMesh = pooledTetrisBlocks[0];
+			pooledTetrisBlocks.RemoveAt(0);
+			if (tempblockMesh)
+			{
+				tempblockMesh->SetActorLocationAndRotation(inLocation, FRotator::ZeroRotator);
+				tempblockMesh->staticMeshComp1->SetHiddenInGame(false);
+				tempblockMesh->staticMeshComp2->SetHiddenInGame(false);
+				tempblockMesh->staticMeshComp3->SetHiddenInGame(false);
+				tempblockMesh->staticMeshComp4->SetHiddenInGame(false);
+			}
+		}
+		else
+		{
+			tempblockMesh = GetWorld()->SpawnActor<ATetrisBlockMesh>(blockMesh_BP, inLocation, FRotator::ZeroRotator);
+			if (tempblockMesh)		spawnTetrisBlocks.Add(tempblockMesh);
+		}
 		if (tempblockMesh)
 		{
 			tempblockMesh->tetrisGrid = this;
 			tempblockMesh->currentBlock = inBlockType;
 			tempblockMesh->SetBlockShape(tileSize);
 			tempblockMesh->SetBlockVisual();
-			spawnTetrisBlocks.Add(tempblockMesh);
 		}
 	}
 	return tempblockMesh;
@@ -133,7 +159,7 @@ void ATetrisGrid::GenerateTetrisGrid()
 	tetrisGridMap.Empty();
 	for (ATetrisBlockMesh* tetrisBlock:spawnTetrisBlocks)
 	{
-		tetrisBlock->SetActorHiddenInGame(true);
+		PoolTetrisBlock(tetrisBlock);
 	}
 	for (int i = 0; i < gridWidth; i++)
 	{
@@ -215,7 +241,6 @@ void ATetrisGrid::UpdataBlocksShadow()
 				tempActor->bIsShadow = true;
 				tempActor->SetBlockShape(tileSize);
 				tempActor->SetActorTransform(oneActiveBlockMesh->GetActorTransform());
-				tempActor->SetBlockVisual();
 
 				TArray<FVector2D> initialGridIndexs = tempActor->GetGridIndexs(FVector2D(0.0f));
 				while (AreTheyValidIndex(tempActor->GetGridIndexs(FVector2D(0.0f,-1.0f)), initialGridIndexs))
@@ -223,6 +248,7 @@ void ATetrisGrid::UpdataBlocksShadow()
 					tempActor->AddActorWorldOffset(FVector(0.0f, 0.0f, -1.0 * tileSize));
 				}
 				tempActor->AddActorWorldOffset(FVector(20.0f, 0.0f, 0.0f));
+				tempActor->SetBlockVisual();
 			}
 		}
 	}
@@ -248,8 +274,8 @@ void ATetrisGrid::ReachTheGround()
 		oneActiveBlockMesh->SetBlockActive(false);
 		oneActiveBlockMesh = nullptr;
 	}
-	SpawnNewBlock(false);
 	RemoveFullRows();
+	SpawnNewBlock(false);
 }
 
 void ATetrisGrid::Hold()
@@ -296,6 +322,7 @@ void ATetrisGrid::RemoveFullRows()
 	if (tempCompeleteRowCount > 0)
 	{
 		currentCombo++;
+
 		switch (tempCompeleteRowCount)
 		{
 		case 1:
@@ -333,7 +360,11 @@ void ATetrisGrid::RemoveFullRows()
 		currentCombo = 0;
 		lastTetrisScore = ETetrisScore::None;
 	}
-	UpdataBlocksShadow();
+	if (gameMode && gameMode->hud && gameMode->hud->GetWidget(EMultiGames::Game_Tetris))
+	{
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataCombo(currentCombo);
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataProgression(currentLevel == maxLevel ? 1.0f : currentCompletedRowCount % 10 / 10.f);
+	}
 }
 
 bool ATetrisGrid::IsRowFull(int inRowIndex)
@@ -353,6 +384,12 @@ void ATetrisGrid::DeleteFullRow(int inRowIndex)
 	for (int x=0;x<gridWidth;x++)
 	{
 		tetrisGridMap[FVector2D(x, inRowIndex)]->SetHiddenInGame(true);
+		ATetrisBlockMesh* tetrisblock = Cast<ATetrisBlockMesh>(tetrisGridMap[FVector2D(x, inRowIndex)]->GetOwner());
+		if (tetrisblock)
+		{
+			if (tetrisblock->staticMeshComp1->bHiddenInGame&& tetrisblock->staticMeshComp2->bHiddenInGame&& tetrisblock->staticMeshComp3->bHiddenInGame&& tetrisblock->staticMeshComp4->bHiddenInGame)
+				PoolTetrisBlock(tetrisblock);
+		}
 		tetrisGridMap.Add(FVector2D(x, inRowIndex), nullptr);
 	}
 }
@@ -408,6 +445,10 @@ void ATetrisGrid::IncreasePoints(ETetrisScore inScoreType)
 	{
 		lastTetrisScore = inScoreType;
 	}
+	if (gameMode && gameMode->hud && gameMode->hud->GetWidget(EMultiGames::Game_Tetris))
+	{
+		gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataPoints(currentPoints);
+	}
 }
 
 void ATetrisGrid::LevelUp()
@@ -416,6 +457,23 @@ void ATetrisGrid::LevelUp()
 	{
 		currentLevel++;
 		currentGameSpeed -= currentGameSpeed / 3.0f;
+		if (gameMode && gameMode->hud && gameMode->hud->GetWidget(EMultiGames::Game_Tetris))
+		{
+			gameMode->hud->GetWidget(EMultiGames::Game_Tetris)->UpdataLevel(currentLevel);
+		}
+	}
+}
+
+void ATetrisGrid::PoolTetrisBlock(class ATetrisBlockMesh* inblock)
+{
+	if (inblock)
+	{
+		inblock->SetBlockActive(false);
+		inblock->staticMeshComp1->SetHiddenInGame(true);
+		inblock->staticMeshComp2->SetHiddenInGame(true);
+		inblock->staticMeshComp3->SetHiddenInGame(true);
+		inblock->staticMeshComp4->SetHiddenInGame(true);
+		pooledTetrisBlocks.AddUnique(inblock);
 	}
 }
 

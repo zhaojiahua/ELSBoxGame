@@ -16,8 +16,18 @@ class ELSBOXGAME_API UMgUserWidget : public UUserWidget
 public:
 	UFUNCTION(BlueprintNativeEvent, category = "zjhAddFuns")
 		void ShowInMenu(EMultiMenu inMenu);
+
 	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
 		void ButtonClicked(EMultiButton inButton);
+
+	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+		void UpdataLevel(int inlevel);
+	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+		void UpdataPoints(int inpoints);
+	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+		void UpdataCombo(int inlevel);
+	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+		void UpdataProgression(float inprogress);
 
 protected:
 	class AMgGameMode* gameMode;

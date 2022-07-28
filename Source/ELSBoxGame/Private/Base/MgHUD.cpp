@@ -20,9 +20,8 @@ void AMgHUD::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AMgHUD::ShowWidget(EMultiGames inGame, EMultiMenu inMenu)
+UMgUserWidget* AMgHUD::GetWidget(EMultiGames inGame)
 {
-	HideAllWidgets();
 	CreateWidgetIfNeed(inGame);
 	UMgUserWidget* tempWidget = nullptr;
 	switch (inGame)
@@ -40,6 +39,14 @@ void AMgHUD::ShowWidget(EMultiGames inGame, EMultiMenu inMenu)
 		tempWidget = pacManGameWidget;
 		break;
 	}
+	return tempWidget;
+}
+
+void AMgHUD::ShowWidget(EMultiGames inGame, EMultiMenu inMenu)
+{
+	HideAllWidgets();
+	UMgUserWidget* tempWidget = GetWidget(inGame);
+
 	if (tempWidget)
 	{
 		tempWidget->SetVisibility(ESlateVisibility::Visible);
@@ -70,6 +77,11 @@ void AMgHUD::ButtonClicked(EMultiButton inButton)
 			break;
 		case EMultiButton::Button_Pause:
 			ShowWidget(gameMode->currentGame, EMultiMenu::Menu_Pause);
+			gameMode->PauseCurrentGame();
+			break;
+		case EMultiButton::Button_Resume:
+			ShowWidget(gameMode->currentGame, EMultiMenu::Menu_Game);
+			gameMode->ResumeCurrentGame();
 			break;
 		case EMultiButton::Button_Options:
 			ShowWidget(gameMode->currentGame, EMultiMenu::Menu_Options);

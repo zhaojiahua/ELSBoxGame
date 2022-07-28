@@ -15,6 +15,7 @@ class ELSBOXGAME_API AMgHUD : public AHUD
 	
 public:
 	//公开函数
+	class UMgUserWidget* GetWidget(EMultiGames inGame);
 	void ShowWidget(EMultiGames inGame, EMultiMenu inMenu);
 	void ButtonClicked(EMultiButton inButton);
 
