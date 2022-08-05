@@ -25,22 +25,3 @@ void UMgUserWidget::ButtonClicked(EMultiButton inButton)
 	}
 }
 
-void UMgUserWidget::UpdataLevel(int inlevel)
-{
-
-}
-
-void UMgUserWidget::UpdataPoints(int inpoints)
-{
-
-}
-
-void UMgUserWidget::UpdataCombo(int incombo)
-{
-
-}
-
-void UMgUserWidget::UpdataProgression(float inprogress)
-{
-
-}

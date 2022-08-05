@@ -20,13 +20,13 @@ public:
 	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
 		void ButtonClicked(EMultiButton inButton);
 
-	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, category = "zjhAddFuns")
 		void UpdataLevel(int inlevel);
-	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, category = "zjhAddFuns")
 		void UpdataPoints(int inpoints);
-	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, category = "zjhAddFuns")
 		void UpdataCombo(int inlevel);
-	UFUNCTION(BlueprintCallable, category = "zjhAddFuns")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, category = "zjhAddFuns")
 		void UpdataProgression(float inprogress);
 
 protected:
